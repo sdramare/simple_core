@@ -1,27 +1,9 @@
-#![no_std]
-#![no_main]
+use std::process::{self, Command};
 
-use core::panic::PanicInfo;
-
-static HELLO: &[u8] = b"Hello my core World!";
-
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
-
-    let x = Some(123);
-    let vga_buffer = 0xb8000 as *mut u8;
-
-    for (i, &byte) in HELLO.iter().enumerate() {
-        unsafe {
-            *vga_buffer.offset(i as isize * 2) = byte;
-            *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
-        }
-    }
-
-    loop {}
-}
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+fn main() {
+    let mut qemu = Command::new("qemu-system-x86_64");
+    qemu.arg("-drive");
+    qemu.arg(format!("format=raw,file={}", env!("BIOS_IMAGE")));
+    let exit_status = qemu.status().unwrap();
+    process::exit(exit_status.code().unwrap_or(-1));
 }

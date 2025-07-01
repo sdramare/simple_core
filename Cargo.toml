@@ -1,15 +1,14 @@
 [package]
-name = "simple_core"
+name = "blog_os"
 version = "0.1.0"
 edition = "2024"
 
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-panic = "abort"
+[workspace]
+members = ["kernel"]
 
 [dependencies]
-bootloader = "=0.9.31"
-# bootloader_api = "0.9.8"
-x86_64 = "0.15.2"
+ovmf-prebuilt = "0.2.3"
+
+[build-dependencies]
+kernel = { path = "kernel", artifact = "bin", target = "x86_64-unknown-none" }
+bootloader = "0.11.3"
