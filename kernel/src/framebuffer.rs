@@ -11,11 +11,18 @@ use embedded_graphics::{
     text::Text,
 };
 
+use crate::utils::Global;
+
 const FONT: MonoFont = FONT_10X20;
 const START_POINT: Point = start_point();
+pub static DISPLAY: Global<Display> = Global::uninit();
+
+pub fn init_display(framebuffer: &'static mut bootloader_api::info::FrameBuffer) {
+    DISPLAY.set(Display::new(framebuffer));
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Position {
+struct Position {
     pub x: usize,
     pub y: usize,
 }
@@ -40,7 +47,10 @@ const fn start_point() -> Point {
 }
 
 impl<'f> Display<'f> {
-    pub fn new(framebuffer: &'f mut FrameBuffer) -> Self {
+    pub fn new<'a>(framebuffer: &'a mut FrameBuffer) -> Self
+    where
+        'a: 'f,
+    {
         Display {
             framebuffer,
             current_point: START_POINT,
@@ -52,7 +62,14 @@ impl<'f> Display<'f> {
         buffer.fill(0);
     }
 
-    pub fn print<'a>(&mut self, text: &'a str) {
+    pub fn color<'a>(&'a mut self, color: Rgb888) -> ColoredDisplay<'f>
+    where
+        'a: 'f,
+    {
+        ColoredDisplay::new(self, color)
+    }
+
+    fn print<'a>(&mut self, text: &'a str, color: Rgb888) {
         let info = self.framebuffer.info();
 
         if self.current_point.y >= self.framebuffer.info().height as i32 {
@@ -64,7 +81,7 @@ impl<'f> Display<'f> {
             buffer[position_y * line_size..].fill(0);
         }
 
-        let style = MonoTextStyle::new(&FONT, Rgb888::WHITE);
+        let style = MonoTextStyle::new(&FONT, color);
         let mut result = Text::new(text, self.current_point, style)
             .draw(self)
             .unwrap();
@@ -137,7 +154,7 @@ pub fn set_pixel_in(framebuffer: &mut FrameBuffer, position: Position, color: Co
 
 impl<'f> fmt::Write for Display<'f> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.print(s);
+        self.print(s, Rgb888::WHITE);
         Ok(())
     }
 }
@@ -165,5 +182,26 @@ impl<'f> OriginDimensions for Display<'f> {
         let info = self.framebuffer.info();
 
         Size::new(info.width as u32, info.height as u32)
+    }
+}
+
+pub struct ColoredDisplay<'f> {
+    display: &'f mut Display<'f>,
+    color: Rgb888,
+}
+
+impl<'f> ColoredDisplay<'f> {
+    pub fn new<'a>(display: &'a mut Display<'f>, color: Rgb888) -> Self
+    where
+        'a: 'f,
+    {
+        ColoredDisplay { display, color }
+    }
+}
+
+impl<'f> fmt::Write for ColoredDisplay<'f> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.display.print(s, self.color);
+        Ok(())
     }
 }
