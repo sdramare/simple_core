@@ -1,4 +1,4 @@
-use core::{fmt, mem};
+use core::fmt;
 
 use bootloader_api::info::{FrameBuffer, PixelFormat};
 use embedded_graphics::{
@@ -66,15 +66,20 @@ impl<'f> Display<'f> {
     where
         'a: 'f,
     {
-        ColoredDisplay::new(self, color)
+        ColoredDisplay {
+            display: self,
+            color,
+        }
     }
 
     fn print<'a>(&mut self, text: &'a str, color: Rgb888) {
         let info = self.framebuffer.info();
 
         if self.current_point.y >= self.framebuffer.info().height as i32 {
-            let buffer = self.framebuffer.buffer_mut();
+            // move the buffer up by one line
+            // this is done by copying the buffer contents from the second line to the first line and filling the last line with zeros
             let line_size = info.stride * info.bytes_per_pixel;
+            let buffer = self.framebuffer.buffer_mut();
             buffer.copy_within(line_size * (FONT.character_size.height as usize).., 0);
             self.current_point.y -= FONT.character_size.height as i32;
             let position_y = self.current_point.y as usize;
@@ -188,15 +193,6 @@ impl<'f> OriginDimensions for Display<'f> {
 pub struct ColoredDisplay<'f> {
     display: &'f mut Display<'f>,
     color: Rgb888,
-}
-
-impl<'f> ColoredDisplay<'f> {
-    pub fn new<'a>(display: &'a mut Display<'f>, color: Rgb888) -> Self
-    where
-        'a: 'f,
-    {
-        ColoredDisplay { display, color }
-    }
 }
 
 impl<'f> fmt::Write for ColoredDisplay<'f> {

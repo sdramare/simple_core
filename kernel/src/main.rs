@@ -1,12 +1,14 @@
 #![no_std]
 #![no_main]
-#![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)]
 
 bootloader_api::entry_point!(kernel_main);
 
 use core::panic::PanicInfo;
 
 mod framebuffer;
+mod gdt;
+mod interrupts;
 mod io;
 mod logger;
 mod serial;
@@ -17,6 +19,7 @@ fn kernel_main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
         io::init(framebuffer);
         logger::init();
+        interrupts::init_idt();
 
         println!("{} {}", "Hello", "World!");
 
@@ -24,7 +27,21 @@ fn kernel_main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
         log::warn!("This is a warning message");
         log::info!("This is an info message");
 
-        panic!("This is a panic message");
+        x86_64::instructions::interrupts::int3();
+
+        fn stack_overflow() {
+            stack_overflow(); // for each recursion, the return address is pushed
+        }
+
+        // trigger a stack overflow
+        stack_overflow();
+
+        // trigger a page fault
+        unsafe {
+            *(0xdeadbeef as *mut u8) = 42;
+        };
+
+        println!("It did not crash!");
     }
 
     loop {}
