@@ -1,5 +1,7 @@
 use core::fmt;
 
+use x86_64::instructions::interrupts;
+
 use crate::{
     framebuffer::{DISPLAY, init_display},
     serial::{SERIAL1, init_serial},
@@ -24,16 +26,18 @@ macro_rules! println {
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-    use core::fmt::Write;
-    SERIAL1
-        .get()
-        .expect("serial uninit")
-        .write_fmt(args)
-        .expect("Printing to serial failed");
+    interrupts::without_interrupts(|| {
+        use core::fmt::Write;
+        SERIAL1
+            .get()
+            .expect("serial uninit")
+            .write_fmt(args)
+            .expect("Printing to serial failed");
 
-    DISPLAY
-        .get()
-        .expect("display uninit")
-        .write_fmt(args)
-        .expect("Printing to display failed");
+        DISPLAY
+            .get()
+            .expect("display uninit")
+            .write_fmt(args)
+            .expect("Printing to display failed");
+    });
 }

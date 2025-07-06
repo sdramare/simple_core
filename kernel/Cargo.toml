@@ -17,3 +17,4 @@ log = { version = "0.4.17", default-features = false }
 x86_64 = "0.15.2"
 uart_16550 = "0.3.2"
 pic8259 = "0.11.0"
+pc-keyboard = "0.8.0"
