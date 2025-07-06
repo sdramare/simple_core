@@ -75,6 +75,12 @@ impl<'f> Display<'f> {
     fn print<'a>(&mut self, text: &'a str, color: Rgb888) {
         let info = self.framebuffer.info();
 
+        if self.current_point.x >= info.width as i32 {
+            // move to the next line
+            self.current_point.x = 0;
+            self.current_point.y += FONT.character_size.height as i32;
+        }
+
         if self.current_point.y >= self.framebuffer.info().height as i32 {
             // move the buffer up by one line
             // this is done by copying the buffer contents from the second line to the first line and filling the last line with zeros

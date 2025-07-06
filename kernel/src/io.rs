@@ -1,7 +1,5 @@
 use core::fmt;
 
-use embedded_graphics::pixelcolor::Rgb888;
-
 use crate::{
     framebuffer::{DISPLAY, init_display},
     serial::{SERIAL1, init_serial},

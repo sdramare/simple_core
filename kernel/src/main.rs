@@ -39,6 +39,6 @@ fn kernel_main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
 fn panic(_info: &PanicInfo) -> ! {
     // This function is called when a panic occurs.
     // In a no_std environment, we typically enter an infinite loop.
-    log::error!("Kernel panic: {}", _info);
+    log::error!("\nKernel panic: {}", _info);
     loop {}
 }

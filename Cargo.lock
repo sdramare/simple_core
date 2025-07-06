@@ -431,6 +431,7 @@ dependencies = [
  "conquer-once 0.4.0",
  "embedded-graphics",
  "log",
+ "pic8259",
  "uart_16550 0.3.2",
  "x86_64 0.15.2",
 ]
@@ -563,6 +564,15 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "pic8259"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62d9a86c292b165f757e47e7fd66855def189b2564609bc4203727b27c33db22"
+dependencies = [
+ "x86_64 0.15.2",
+]
 
 [[package]]
 name = "proc-macro2"
