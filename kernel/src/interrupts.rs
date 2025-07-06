@@ -9,8 +9,9 @@ pub fn init_idt() {
 
     IDT.set(InterruptDescriptorTable::new());
     let idt = IDT.get().expect("IDT uninitialized");
-    idt.breakpoint.set_handler_fn(breakpoint_handler);
+
     unsafe {
+        idt.breakpoint.set_handler_fn(breakpoint_handler);
         idt.double_fault
             .set_handler_fn(double_fault_handler)
             .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);

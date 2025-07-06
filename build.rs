@@ -3,6 +3,7 @@ use std::{env, path::PathBuf};
 
 fn main() {
     let kernel_path = env::var("CARGO_BIN_FILE_KERNEL").unwrap();
+    println!("kernel path: {kernel_path}");
     let disk_builder = DiskImageBuilder::new(PathBuf::from(kernel_path));
 
     // specify output paths

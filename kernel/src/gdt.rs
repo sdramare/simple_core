@@ -1,6 +1,7 @@
+use log::info;
 use x86_64::VirtAddr;
-use x86_64::instructions::segmentation::{CS, Segment};
-use x86_64::instructions::tables::load_tss;
+use x86_64::instructions::segmentation::{self, CS, Segment};
+use x86_64::instructions::tables::{self, load_tss};
 use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable};
 use x86_64::structures::tss::TaskStateSegment;
 
@@ -26,8 +27,13 @@ pub fn init_tss() {
 
     GDT.set(GlobalDescriptorTable::new());
     let gdt = GDT.get().expect("GDT uninitialized");
-    let code_selector = gdt.append(Descriptor::kernel_code_segment());
+    let code_selector: x86_64::structures::gdt::SegmentSelector =
+        gdt.append(Descriptor::kernel_code_segment());
+    gdt.append(Descriptor::kernel_data_segment());
     let tss_selector = gdt.append(Descriptor::tss_segment(tss));
+    /* gdt.append(Descriptor::UserSegment(0));
+    gdt.append(Descriptor::user_code_segment());
+    gdt.append(Descriptor::user_data_segment()); */
     gdt.load();
 
     unsafe {
