@@ -1,6 +1,6 @@
 use embedded_graphics::{pixelcolor::Rgb888, prelude::RgbColor};
 
-use crate::{framebuffer::DISPLAY, println_color, serial::SERIAL1};
+use crate::println_color;
 
 const LOGGER: Logger = Logger {};
 

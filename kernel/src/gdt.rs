@@ -1,7 +1,6 @@
-use log::info;
 use x86_64::VirtAddr;
-use x86_64::instructions::segmentation::{self, CS, Segment};
-use x86_64::instructions::tables::{self, load_tss};
+use x86_64::instructions::segmentation::{CS, Segment};
+use x86_64::instructions::tables::load_tss;
 use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable};
 use x86_64::structures::tss::TaskStateSegment;
 

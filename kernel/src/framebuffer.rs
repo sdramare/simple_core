@@ -5,7 +5,7 @@ use embedded_graphics::{
     Pixel,
     draw_target::DrawTarget,
     geometry::{OriginDimensions, Size},
-    mono_font::{MonoFont, MonoTextStyle, MonoTextStyleBuilder, iso_8859_1::FONT_10X20},
+    mono_font::{MonoFont, MonoTextStyleBuilder, iso_8859_1::FONT_10X20},
     pixelcolor::{Rgb888, RgbColor},
     prelude::{Point, *},
     text::Text,
