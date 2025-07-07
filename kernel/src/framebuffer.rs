@@ -225,11 +225,21 @@ impl ColoredDisplay {
 
 impl fmt::Write for ColoredDisplay {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        DISPLAY
-            .lock()
-            .get()
-            .expect("display uninit")
-            .print(s, self.color, None);
+        crate::display!().print(s, self.color, None);
         Ok(())
     }
+}
+
+#[macro_export]
+macro_rules! display {
+    () => {
+        $crate::read_global!(DISPLAY, "Display uninitialized")
+    };
+}
+
+#[macro_export]
+macro_rules! display_colored {
+    ($color:expr) => {
+        $crate::framebuffer::ColoredDisplay::new($color)
+    };
 }

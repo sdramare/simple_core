@@ -25,6 +25,13 @@ impl<T> Global<T> {
 unsafe impl<T> Send for Global<T> where T: Send {}
 unsafe impl<T> Sync for Global<T> where T: Send + Sync {}
 
+#[macro_export]
+macro_rules! read_global {
+    ($variable:expr, $error_mgs: literal) => {
+        $variable.lock().get().expect($error_mgs)
+    };
+}
+
 pub fn hlt_loop() -> ! {
     loop {
         x86_64::instructions::hlt();

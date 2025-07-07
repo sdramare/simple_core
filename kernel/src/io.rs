@@ -1,12 +1,12 @@
 use core::fmt;
 
-use embedded_graphics::pixelcolor::Rgb888;
-use x86_64::instructions::interrupts;
-
+use crate::{display, display_colored, serial};
 use crate::{
-    framebuffer::{ColoredDisplay, DISPLAY, init_display},
+    framebuffer::{DISPLAY, init_display},
     serial::{SERIAL1, init_serial},
 };
+
+use x86_64::instructions::interrupts;
 
 pub fn init(framebuffer: &'static mut bootloader_api::info::FrameBuffer) {
     init_display(framebuffer);
@@ -48,17 +48,11 @@ pub fn _print(args: fmt::Arguments) {
     interrupts::without_interrupts(|| {
         use core::fmt::Write;
 
-        SERIAL1
-            .lock()
-            .get()
-            .expect("serial uninit")
+        serial!()
             .write_fmt(args)
             .expect("Printing to serial failed");
 
-        DISPLAY
-            .lock()
-            .get()
-            .expect("display uninit")
+        display!()
             .write_fmt(args)
             .expect("Printing to display failed");
     });
@@ -69,14 +63,11 @@ pub fn _print_color(color: embedded_graphics::pixelcolor::Rgb888, args: fmt::Arg
     interrupts::without_interrupts(|| {
         use core::fmt::Write;
 
-        SERIAL1
-            .lock()
-            .get()
-            .expect("serial uninit")
+        serial!()
             .write_fmt(args)
             .expect("Printing to serial failed");
 
-        ColoredDisplay::new(color)
+        display_colored!(color)
             .write_fmt(args)
             .expect("Printing to display failed");
     });
@@ -87,13 +78,10 @@ pub fn _clear() {
     interrupts::without_interrupts(|| {
         use core::fmt::Write;
 
-        SERIAL1
-            .lock()
-            .get()
-            .expect("serial uninit")
+        serial!()
             .write_fmt(format_args!("---clear---\n"))
             .expect("Printing to serial failed");
 
-        DISPLAY.lock().get().expect("display uninit").clear();
+        display!().clear();
     });
 }

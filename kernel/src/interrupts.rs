@@ -2,7 +2,7 @@ use pc_keyboard::{DecodedKey, HandleControl, Keyboard, ScancodeSet1, layouts};
 use pic8259::ChainedPics;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
-use crate::{framebuffer::DISPLAY, gdt, print, println, utils::Global};
+use crate::{display, framebuffer::DISPLAY, gdt, print, println, utils::Global};
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
@@ -68,11 +68,7 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFr
     let timer = TIMER.get().expect("Timer uninitialized");
     timer.ticks += 1;
     if timer.ticks % 6 == 0 {
-        DISPLAY
-            .lock()
-            .get()
-            .expect("display uninitialized")
-            .blink_caret();
+        display!().blink_caret();
     }
 
     unsafe {
@@ -94,11 +90,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                 DecodedKey::Unicode(character) => print!("{}", character),
                 DecodedKey::RawKey(key) => print!("raw {:?}", key),
             }
-            DISPLAY
-                .lock()
-                .get()
-                .expect("display uninitialized")
-                .blink_caret();
+            display!().blink_caret();
         }
     }
 

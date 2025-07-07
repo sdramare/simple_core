@@ -8,7 +8,7 @@ use core::panic::PanicInfo;
 
 use embedded_graphics::{pixelcolor::Rgb888, prelude::RgbColor};
 
-use crate::{framebuffer::DISPLAY, utils::hlt_loop};
+use crate::utils::hlt_loop;
 
 mod framebuffer;
 mod gdt;

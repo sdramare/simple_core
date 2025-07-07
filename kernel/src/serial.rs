@@ -9,3 +9,10 @@ pub fn init_serial(port: u16) {
     let serial = unsafe { SerialPort::new(port) };
     SERIAL1.lock().set(serial);
 }
+
+#[macro_export]
+macro_rules! serial {
+    () => {
+        $crate::read_global!(SERIAL1, "Serial port uninitialized")
+    };
+}
