@@ -1,5 +1,6 @@
 use core::cell::UnsafeCell;
 
+//yes, I know, but this is simplest way to have a global variable without lock and borrow checker hell
 pub struct Global<T> {
     value: UnsafeCell<Option<T>>,
 }

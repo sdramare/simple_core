@@ -6,7 +6,9 @@ bootloader_api::entry_point!(kernel_main);
 
 use core::panic::PanicInfo;
 
-use crate::utils::hlt_loop;
+use embedded_graphics::{pixelcolor::Rgb888, prelude::RgbColor};
+
+use crate::{framebuffer::DISPLAY, utils::hlt_loop};
 
 mod framebuffer;
 mod gdt;
@@ -32,6 +34,10 @@ fn kernel_main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
         x86_64::instructions::interrupts::int3();
 
         println!("It did not crash!");
+        log::info!("Kernel initialized successfully.");
+        clear!();
+        println_color!(Rgb888::GREEN, "Welcome to the Simple Core Kernel!");
+        print_color!(Rgb888::GREEN, ">");
     }
 
     hlt_loop();

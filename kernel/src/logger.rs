@@ -1,6 +1,6 @@
 use embedded_graphics::{pixelcolor::Rgb888, prelude::RgbColor};
 
-use crate::{framebuffer::DISPLAY, serial::SERIAL1};
+use crate::{framebuffer::DISPLAY, println_color, serial::SERIAL1};
 
 const LOGGER: Logger = Logger {};
 
@@ -19,8 +19,6 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            use core::fmt::Write;
-
             let level = record.level();
             let color = match level {
                 log::Level::Error => Rgb888::RED,
@@ -30,19 +28,7 @@ impl log::Log for Logger {
                 log::Level::Trace => Rgb888::GREEN,
             };
 
-            let message = format_args!("{}: {}\n", record.level(), record.args());
-            SERIAL1
-                .get()
-                .expect("serial uninit")
-                .write_fmt(message)
-                .expect("Printing to serial failed");
-
-            DISPLAY
-                .get()
-                .expect("display uninit")
-                .color(color)
-                .write_fmt(message)
-                .expect("Printing to display failed");
+            println_color!(color, "{}: {}", record.level(), record.args());
         }
     }
 

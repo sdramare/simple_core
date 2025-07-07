@@ -5,20 +5,21 @@ use embedded_graphics::{
     Pixel,
     draw_target::DrawTarget,
     geometry::{OriginDimensions, Size},
-    mono_font::{MonoFont, MonoTextStyle, ascii::FONT_10X20},
+    mono_font::{MonoFont, MonoTextStyle, MonoTextStyleBuilder, iso_8859_1::FONT_10X20},
     pixelcolor::{Rgb888, RgbColor},
     prelude::{Point, *},
     text::Text,
 };
+use spin::Mutex;
 
 use crate::utils::Global;
 
 const FONT: MonoFont = FONT_10X20;
 const START_POINT: Point = start_point();
-pub static DISPLAY: Global<Display> = Global::uninit();
+pub static DISPLAY: Mutex<Global<Display>> = Mutex::new(Global::uninit());
 
 pub fn init_display(framebuffer: &'static mut bootloader_api::info::FrameBuffer) {
-    DISPLAY.set(Display::new(framebuffer));
+    DISPLAY.lock().set(Display::new(framebuffer));
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +38,7 @@ pub struct Color {
 pub struct Display<'f> {
     framebuffer: &'f mut FrameBuffer,
     current_point: Point,
+    show_caret: bool,
 }
 
 const fn start_point() -> Point {
@@ -54,25 +56,35 @@ impl<'f> Display<'f> {
         Display {
             framebuffer,
             current_point: START_POINT,
+            show_caret: false,
         }
     }
 
     pub fn clear(&mut self) {
         let buffer = self.framebuffer.buffer_mut();
         buffer.fill(0);
+        self.current_point = START_POINT;
     }
 
-    pub fn color<'a>(&'a mut self, color: Rgb888) -> ColoredDisplay<'f>
-    where
-        'a: 'f,
-    {
-        ColoredDisplay {
-            display: self,
-            color,
+    pub fn blink_caret(&mut self) {
+        self.show_caret = !self.show_caret;
+
+        let postion_x = self.current_point.x;
+
+        if self.show_caret {
+            // draw a caret at the current position
+            let caret_color = Rgb888::WHITE;
+            let caret_background = Rgb888::WHITE;
+            self.print(" ", caret_color, Some(caret_background));
+        } else {
+            // clear the caret
+            self.print(" ", Rgb888::BLACK, None);
         }
+
+        self.current_point.x = postion_x;
     }
 
-    fn print<'a>(&mut self, text: &'a str, color: Rgb888) {
+    pub fn print<'a>(&mut self, text: &'a str, color: Rgb888, background: Option<Rgb888>) {
         let info = self.framebuffer.info();
 
         if self.current_point.x >= info.width as i32 {
@@ -92,10 +104,15 @@ impl<'f> Display<'f> {
             buffer[position_y * line_size..].fill(0);
         }
 
-        let style = MonoTextStyle::new(&FONT, color);
+        let style = MonoTextStyleBuilder::new()
+            .font(&FONT)
+            .text_color(color)
+            .background_color(background.unwrap_or(Rgb888::BLACK))
+            .build();
         let mut result = Text::new(text, self.current_point, style)
             .draw(self)
             .unwrap();
+
         if text.ends_with('\n') {
             result = Point::new(FONT.character_size.width as i32, result.y);
         }
@@ -165,7 +182,7 @@ pub fn set_pixel_in(framebuffer: &mut FrameBuffer, position: Position, color: Co
 
 impl<'f> fmt::Write for Display<'f> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.print(s, Rgb888::WHITE);
+        self.print(s, Rgb888::WHITE, None);
         Ok(())
     }
 }
@@ -196,14 +213,23 @@ impl<'f> OriginDimensions for Display<'f> {
     }
 }
 
-pub struct ColoredDisplay<'f> {
-    display: &'f mut Display<'f>,
+pub struct ColoredDisplay {
     color: Rgb888,
 }
 
-impl<'f> fmt::Write for ColoredDisplay<'f> {
+impl ColoredDisplay {
+    pub fn new(color: Rgb888) -> ColoredDisplay {
+        ColoredDisplay { color }
+    }
+}
+
+impl fmt::Write for ColoredDisplay {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.display.print(s, self.color);
+        DISPLAY
+            .lock()
+            .get()
+            .expect("display uninit")
+            .print(s, self.color, None);
         Ok(())
     }
 }
