@@ -27,7 +27,7 @@ unsafe impl<T> Sync for Global<T> where T: Send + Sync {}
 
 #[macro_export]
 macro_rules! read_global {
-    ($variable:expr, $error_mgs: literal) => {
+    ($variable:ident, $error_mgs: literal) => {
         $variable.lock().get().expect($error_mgs)
     };
 }

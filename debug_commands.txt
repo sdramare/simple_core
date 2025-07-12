@@ -1,0 +1,5 @@
+set disassembly-flavor intel
+target remote localhost:8864
+add-symbol-file target/debug/kernel.bin 0x8000000000-0x75BD+0x120e0
+b _start
+c

@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(abi_x86_interrupt)]
+#![feature(negative_impls)]
 
 bootloader_api::entry_point!(kernel_main);
 

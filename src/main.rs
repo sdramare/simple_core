@@ -2,8 +2,13 @@ use std::process::{self, Command};
 
 fn main() {
     let mut qemu = Command::new("qemu-system-x86_64");
-    qemu.arg("-device");
-    qemu.arg("isa-debug-exit,iobase=0xf4,iosize=0x04");
+    #[cfg(debug_assertions)]
+    {
+        qemu.arg("-gdb");
+        qemu.arg("tcp::8864");
+        qemu.arg("-S");
+    }
+
     qemu.arg("-serial");
     qemu.arg("stdio");
     qemu.arg("-drive");
