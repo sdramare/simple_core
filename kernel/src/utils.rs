@@ -17,6 +17,7 @@ impl<T> Global<T> {
         unsafe { self.value.get().replace(Some(value)) }
     }
 
+    #[allow(clippy::mut_from_ref)]
     pub fn get(&self) -> Option<&mut T> {
         unsafe { self.value.get().as_mut().and_then(|value| value.as_mut()) }
     }

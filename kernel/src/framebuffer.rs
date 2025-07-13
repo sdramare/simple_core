@@ -16,10 +16,10 @@ use crate::utils::Global;
 
 const FONT: MonoFont = FONT_10X20;
 const START_POINT: Point = start_point();
-pub static DISPLAY: Mutex<Global<Display>> = Mutex::new(Global::uninit());
+pub static DISPLAY: Mutex<Global<FrameBufferDisplay>> = Mutex::new(Global::uninit());
 
 pub fn init_display(framebuffer: &'static mut bootloader_api::info::FrameBuffer) {
-    DISPLAY.lock().set(Display::new(framebuffer));
+    DISPLAY.lock().set(FrameBufferDisplay::new(framebuffer));
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,7 +35,11 @@ pub struct Color {
     pub blue: u8,
 }
 
-pub struct Display<'f> {
+pub trait Display {
+    fn print(&mut self, text: &str, color: Rgb888, background: Option<Rgb888>);
+}
+
+pub struct FrameBufferDisplay<'f> {
     framebuffer: &'f mut FrameBuffer,
     current_point: Point,
     show_caret: bool,
@@ -48,43 +52,8 @@ const fn start_point() -> Point {
     )
 }
 
-impl<'f> Display<'f> {
-    pub fn new<'a>(framebuffer: &'a mut FrameBuffer) -> Self
-    where
-        'a: 'f,
-    {
-        Display {
-            framebuffer,
-            current_point: START_POINT,
-            show_caret: false,
-        }
-    }
-
-    pub fn clear(&mut self) {
-        let buffer = self.framebuffer.buffer_mut();
-        buffer.fill(0);
-        self.current_point = START_POINT;
-    }
-
-    pub fn blink_caret(&mut self) {
-        self.show_caret = !self.show_caret;
-
-        let postion_x = self.current_point.x;
-
-        if self.show_caret {
-            // draw a caret at the current position
-            let caret_color = Rgb888::WHITE;
-            let caret_background = Rgb888::WHITE;
-            self.print(" ", caret_color, Some(caret_background));
-        } else {
-            // clear the caret
-            self.print(" ", Rgb888::BLACK, None);
-        }
-
-        self.current_point.x = postion_x;
-    }
-
-    pub fn print<'a>(&mut self, text: &'a str, color: Rgb888, background: Option<Rgb888>) {
+impl<'f> Display for FrameBufferDisplay<'f> {
+    fn print(&mut self, text: &str, color: Rgb888, background: Option<Rgb888>) {
         let info = self.framebuffer.info();
 
         if self.current_point.x >= info.width as i32 {
@@ -119,6 +88,47 @@ impl<'f> Display<'f> {
 
         self.current_point = result;
     }
+}
+
+impl<'f> FrameBufferDisplay<'f> {
+    pub fn new<'a>(framebuffer: &'a mut FrameBuffer) -> Self
+    where
+        'a: 'f,
+    {
+        FrameBufferDisplay {
+            framebuffer,
+            current_point: START_POINT,
+            show_caret: false,
+        }
+    }
+
+    pub fn clear(&mut self) {
+        let buffer = self.framebuffer.buffer_mut();
+        buffer.fill(0);
+        self.current_point = START_POINT;
+    }
+
+    pub fn color(&mut self, color: Rgb888) -> ColoredDisplay<'_, Self> {
+        ColoredDisplay::new(self, color)
+    }
+
+    pub fn blink_caret(&mut self) {
+        self.show_caret = !self.show_caret;
+
+        let postion_x = self.current_point.x;
+
+        if self.show_caret {
+            // draw a caret at the current position
+            let caret_color = Rgb888::WHITE;
+            let caret_background = Rgb888::WHITE;
+            self.print(" ", caret_color, Some(caret_background));
+        } else {
+            // clear the caret
+            self.print(" ", Rgb888::BLACK, None);
+        }
+
+        self.current_point.x = postion_x;
+    }
 
     fn draw_pixel(&mut self, Pixel(coordinates, color): Pixel<Rgb888>) {
         // ignore any out of bounds pixels
@@ -145,7 +155,7 @@ impl<'f> Display<'f> {
     }
 }
 
-pub fn set_pixel_in(framebuffer: &mut FrameBuffer, position: Position, color: Color) {
+fn set_pixel_in(framebuffer: &mut FrameBuffer, position: Position, color: Color) {
     let info = framebuffer.info();
 
     // calculate offset to first byte of pixel
@@ -180,14 +190,14 @@ pub fn set_pixel_in(framebuffer: &mut FrameBuffer, position: Position, color: Co
     }
 }
 
-impl<'f> fmt::Write for Display<'f> {
+impl<'f> fmt::Write for FrameBufferDisplay<'f> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.print(s, Rgb888::WHITE, None);
         Ok(())
     }
 }
 
-impl<'f> DrawTarget for Display<'f> {
+impl<'f> DrawTarget for FrameBufferDisplay<'f> {
     type Color = Rgb888;
 
     /// Drawing operations can never fail.
@@ -205,7 +215,7 @@ impl<'f> DrawTarget for Display<'f> {
     }
 }
 
-impl<'f> OriginDimensions for Display<'f> {
+impl<'f> OriginDimensions for FrameBufferDisplay<'f> {
     fn size(&self) -> Size {
         let info = self.framebuffer.info();
 
@@ -213,19 +223,20 @@ impl<'f> OriginDimensions for Display<'f> {
     }
 }
 
-pub struct ColoredDisplay {
+pub struct ColoredDisplay<'a, TDisplay: Display> {
+    display: &'a mut TDisplay,
     color: Rgb888,
 }
 
-impl ColoredDisplay {
-    pub fn new(color: Rgb888) -> ColoredDisplay {
-        ColoredDisplay { color }
+impl<'a, TDisplay: Display> ColoredDisplay<'a, TDisplay> {
+    pub fn new(display: &'a mut TDisplay, color: Rgb888) -> Self {
+        ColoredDisplay { display, color }
     }
 }
 
-impl fmt::Write for ColoredDisplay {
+impl<'a, TDisplay: Display> fmt::Write for ColoredDisplay<'a, TDisplay> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        crate::display!().print(s, self.color, None);
+        self.display.print(s, self.color, None);
         Ok(())
     }
 }
@@ -234,12 +245,5 @@ impl fmt::Write for ColoredDisplay {
 macro_rules! display {
     () => {
         $crate::read_global!(DISPLAY, "Display uninitialized")
-    };
-}
-
-#[macro_export]
-macro_rules! display_colored {
-    ($color:expr) => {
-        $crate::framebuffer::ColoredDisplay::new($color)
     };
 }

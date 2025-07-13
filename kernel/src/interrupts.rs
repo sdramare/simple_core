@@ -47,9 +47,9 @@ pub enum InterruptIndex {
     Keyboard,
 }
 
-impl Into<u8> for InterruptIndex {
-    fn into(self) -> u8 {
-        self as u8
+impl From<InterruptIndex> for u8 {
+    fn from(index: InterruptIndex) -> Self {
+        index as u8
     }
 }
 

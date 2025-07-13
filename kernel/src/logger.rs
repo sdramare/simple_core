@@ -2,8 +2,6 @@ use embedded_graphics::{pixelcolor::Rgb888, prelude::RgbColor};
 
 use crate::println_color;
 
-const LOGGER: Logger = Logger {};
-
 pub fn init() {
     // Initialize the logger
     log::set_logger(&Logger).expect("Failed to set logger");

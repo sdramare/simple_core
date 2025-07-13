@@ -2,7 +2,7 @@ use bootloader::DiskImageBuilder;
 use std::{env, path::PathBuf};
 
 fn main() {
-    let kernel_path = env::var("CARGO_BIN_FILE_KERNEL").unwrap();
+    let kernel_path = env::var("CARGO_BIN_FILE_KERNEL").expect("CARGO_BIN_FILE_KERNEL not set");
     println!("kernel path: {kernel_path}");
     let disk_builder = DiskImageBuilder::new(PathBuf::from(kernel_path));
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap()).join("../../..");

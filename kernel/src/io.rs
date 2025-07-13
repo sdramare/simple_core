@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::{display, display_colored, serial};
+use crate::{display, serial};
 use crate::{
     framebuffer::{DISPLAY, init_display},
     serial::{SERIAL1, init_serial},
@@ -67,7 +67,8 @@ pub fn _print_color(color: embedded_graphics::pixelcolor::Rgb888, args: fmt::Arg
             .write_fmt(args)
             .expect("Printing to serial failed");
 
-        display_colored!(color)
+        display!()
+            .color(color)
             .write_fmt(args)
             .expect("Printing to display failed");
     });
