@@ -37,6 +37,12 @@ fn kernel_main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
         println!("It did not crash!");
         log::info!("Kernel initialized successfully.");
         clear!();
+
+        let ptr = 0xdeadbeaf as *mut u8;
+        unsafe {
+            *ptr = 42;
+        }
+
         println_color!(Rgb888::GREEN, "Welcome to the Simple Core Kernel!");
         print_color!(Rgb888::GREEN, ">");
     }
