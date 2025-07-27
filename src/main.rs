@@ -1,9 +1,12 @@
-use std::process::{self, Command};
+use std::{
+    env,
+    process::{self, Command},
+};
 
 fn main() {
     let mut qemu = Command::new("qemu-system-x86_64");
-    #[cfg(debug_assertions)]
-    {
+    let is_debug = env::var("DEBUG").map(|val| val == "1").unwrap_or_default();
+    if is_debug {
         qemu.arg("-gdb");
         qemu.arg("tcp::8864");
         qemu.arg("-S");
